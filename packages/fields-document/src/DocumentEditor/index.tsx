@@ -21,6 +21,7 @@ import { Editable, ReactEditor, Slate, useSlate, withReact } from 'slate-react';
 import { withHistory } from 'slate-history';
 
 import { EditableProps } from 'slate-react/dist/components/editable';
+import scrollIntoView from 'scroll-into-view-if-needed';
 import { ComponentBlock } from '../component-blocks';
 import { DocumentFeatures } from '../views';
 import { withParagraphs } from './paragraphs';
@@ -341,6 +342,23 @@ export function DocumentEditorProvider({
   );
 }
 
+const scrollSelectionIntoView = (editor: ReactEditor, domRange: globalThis.Range) => {
+  if (!ReactEditor.isFocused(editor)) return;
+  // from https://github.com/ianstormtaylor/slate/blob/fbab6331a5ecebd9e98c6c8c87d6f4b3b7c43bd0/packages/slate-react/src/components/editable.tsx#L1629-L1648
+  // This was affecting the selection of multiple blocks and dragging behavior,
+  // so enabled only if the selection has been collapsed.
+  if (!editor.selection || (editor.selection && Range.isCollapsed(editor.selection))) {
+    const leafEl = domRange.startContainer.parentElement!;
+    leafEl.getBoundingClientRect = domRange.getBoundingClientRect.bind(domRange);
+    scrollIntoView(leafEl, {
+      scrollMode: 'if-needed',
+    });
+
+    // @ts-expect-error
+    delete leafEl.getBoundingClientRect;
+  }
+};
+
 export function DocumentEditorEditable(props: EditableProps) {
   const editor = useSlate();
   const componentBlocks = useContext(ComponentBlockContext);
@@ -349,6 +367,7 @@ export function DocumentEditorEditable(props: EditableProps) {
 
   return (
     <Editable
+      scrollSelectionIntoView={scrollSelectionIntoView}
       decorate={useCallback(
         ([node, path]: NodeEntry<Node>) => {
           let decorations: Range[] = [];
