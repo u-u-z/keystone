@@ -42,7 +42,7 @@ This will start the Admin UI at [localhost:3000](http://localhost:3000). Open th
 
 ### Subscriptions Page
 
-Once you have created your first user and a post or two, open the [/subscriptions](http://localhost:3000/subscriptions) in another tab. Here you will see the time feed changing every second in response to the time subscription, as well as an update whenever a post is published.
+Once you have created your first user and a post or two, open the [/subscriptions](http://localhost:3000/subscriptions) page in another tab. Here you will see the time feed changing every second in response to the time subscription, as well as an update whenever a post is published.
 
 ## Publish a Post
 
