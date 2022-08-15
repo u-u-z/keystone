@@ -30,4 +30,5 @@ model Author {
   email    String  @unique @default("")
   posts    Post[]  @relation("Post_author")
   password String?
+  isAdmin  Boolean @default(false)
 }

@@ -148,6 +148,7 @@ type Author {
   ): [Post!]
   postsCount(where: PostWhereInput! = {}): Int
   password: PasswordState
+  isAdmin: Boolean
 }
 
 type PasswordState {
@@ -168,6 +169,7 @@ input AuthorWhereInput {
   email: StringFilter
   posts: PostManyRelationFilter
   password: PasswordFilter
+  isAdmin: BooleanFilter
 }
 
 input PostManyRelationFilter {
@@ -180,10 +182,16 @@ input PasswordFilter {
   isSet: Boolean!
 }
 
+input BooleanFilter {
+  equals: Boolean
+  not: BooleanFilter
+}
+
 input AuthorOrderByInput {
   id: OrderDirection
   name: OrderDirection
   email: OrderDirection
+  isAdmin: OrderDirection
 }
 
 input AuthorUpdateInput {
@@ -191,6 +199,7 @@ input AuthorUpdateInput {
   email: String
   posts: PostRelateToManyForUpdateInput
   password: String
+  isAdmin: Boolean
 }
 
 input PostRelateToManyForUpdateInput {
@@ -210,6 +219,7 @@ input AuthorCreateInput {
   email: String
   posts: PostRelateToManyForCreateInput
   password: String
+  isAdmin: Boolean
 }
 
 input PostRelateToManyForCreateInput {
@@ -270,6 +280,7 @@ input CreateInitialAuthorInput {
   name: String
   email: String
   password: String
+  isAdmin: Boolean
 }
 
 type Query {

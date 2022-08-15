@@ -1,14 +1,22 @@
 import { list, graphQLSchemaExtension } from '@keystone-6/core';
-import { select, relationship, text, timestamp, password } from '@keystone-6/core/fields';
+import { select, relationship, text, timestamp, password, checkbox } from '@keystone-6/core/fields';
 import { pubSub } from './websocket';
 
 import type { Lists } from '.keystone/types';
 
 export const lists: Lists = {
   Post: list({
+    access: {
+      operation: {
+        // TODO: This access control does not affect the subscription
+        query: ({ session }) => !!session.data.isAdmin,
+        update: ({ session }) => !!session.data.isAdmin,
+      },
+    },
     hooks: {
       afterOperation: async ({ item }) => {
         // publish the new post to the 'POST_UPDATED' channel after it is updated/created
+        // TODO: This bypasses the access control for the subscription
         pubSub.publish('POST_UPDATED', {
           postUpdated: item,
         });
@@ -30,11 +38,18 @@ export const lists: Lists = {
   }),
 
   Author: list({
+    access: {
+      operation: {
+        query: ({ session }) => !!session.data.isAdmin,
+        update: ({ session }) => !!session.data.isAdmin,
+      },
+    },
     fields: {
       name: text({ validation: { isRequired: true } }),
       email: text({ isIndexed: 'unique', validation: { isRequired: true } }),
       posts: relationship({ ref: 'Post.author', many: true }),
       password: password(),
+      isAdmin: checkbox(),
     },
   }),
 };
@@ -68,6 +83,7 @@ export const extendGraphqlSchema = graphQLSchemaExtension({
         });
 
         console.log('POST_PUBLISHED', { id });
+        // TODO: This bypasses the access control for the subscription
         pubSub.publish('POST_PUBLISHED', {
           postPublished: post,
         });

@@ -36,12 +36,29 @@ const TIME = gql`
 `;
 
 // Setup the Post subscription
+const POST_PUBLISHED = gql`
+  subscription POST_UPDATED {
+    postPublished {
+      id
+      title
+      content
+      author {
+        name
+      }
+    }
+  }
+`;
+
+// Setup the Post subscription
 const POST_UPDATED = gql`
   subscription POST_UPDATED {
     postUpdated {
       id
       title
       content
+      author {
+        name
+      }
     }
   }
 `;
@@ -70,18 +87,32 @@ const subClient = new ApolloClient({
 
 export default function CustomPage() {
   const [timeRows, setTimeRows] = useState([] as string[]);
-  const [postRows, setPostRows] = useState([] as string[]);
+  const [updatedPostRows, setUpdatedPostRows] = useState([] as string[]);
+  const [publishedPostRows, setPublishedPostRows] = useState([] as string[]);
+
   function appendTime(row: string) {
     setTimeRows([...timeRows, row]);
   }
 
   // Subscribe to the `postPublished` subscription using the Apollo client created above
-  const { data: postData, loading: postLoading } = useSubscription(POST_UPDATED, {
+  const { data: updatedPostData, loading: updatedPostLoading } = useSubscription(POST_UPDATED, {
     client: subClient,
     onSubscriptionData: ({ subscriptionData }) => {
-      setPostRows([...postRows, JSON.stringify(subscriptionData.data.postUpdated)]);
+      setUpdatedPostRows([...updatedPostRows, JSON.stringify(subscriptionData.data.postUpdated)]);
     },
   });
+  const { data: publishedPostData, loading: publishedPostLoading } = useSubscription(
+    POST_PUBLISHED,
+    {
+      client: subClient,
+      onSubscriptionData: ({ subscriptionData }) => {
+        setPublishedPostRows([
+          ...publishedPostRows,
+          JSON.stringify(subscriptionData.data.postPublished),
+        ]);
+      },
+    }
+  );
   // Subscribe to the `time` subscription using the Apollo client created above
   const { data, loading } = useSubscription(TIME, {
     client: subClient,
@@ -110,10 +141,20 @@ export default function CustomPage() {
         </div>
         <div className={styles.feed}>
           <h4>Last Updated Post Title</h4>
-          <div>{!postLoading && postData?.postUpdated?.title}</div>
+          <div>{!updatedPostLoading && updatedPostData?.postUpdated?.title}</div>
           <h4>Updated Post Feed</h4>
           <div>
-            {postRows.map((row, i) => (
+            {updatedPostRows.map((row, i) => (
+              <div key={i}>{row}</div>
+            ))}
+          </div>
+        </div>
+        <div className={styles.feed}>
+          <h4>Last Published Post Title</h4>
+          <div>{!publishedPostLoading && publishedPostData?.postPublished?.title}</div>
+          <h4>Published Post Feed</h4>
+          <div>
+            {publishedPostRows.map((row, i) => (
               <div key={i}>{row}</div>
             ))}
           </div>

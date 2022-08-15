@@ -2,26 +2,13 @@ import http from 'http';
 import { useServer as wsUseServer } from 'graphql-ws/lib/use/ws';
 import { WebSocketServer } from 'ws';
 import { PubSub } from 'graphql-subscriptions';
+import { parse, GraphQLError } from 'graphql';
+
 import {
   CreateRequestContext,
   KeystoneGraphQLAPI,
   BaseKeystoneTypeInfo,
 } from '@keystone-6/core/types';
-
-async function onConnect(
-  request: http.IncomingMessage,
-  createRequestContext: CreateRequestContext<BaseKeystoneTypeInfo>
-) {
-  // @ts-expect-error CreateRequestContext requires `req` and `res` but only `req` is available here
-  const context = await createRequestContext(request);
-
-  // Check the user is authenticated (ie. they have a session)
-  // Run any Checks on the session here, or remove this check if you don't need it
-  if (!context.session) {
-    throw new Error('Not authenticated');
-  }
-  console.log('onConnect', !!context.session);
-}
 
 // Setup pubsub as a Global variable in dev so it survives Hot Reloads.
 declare global {
@@ -48,15 +35,25 @@ export const extendHttpServer = (
   wsUseServer(
     {
       schema: graphqlSchema,
-      // replace the 'graphql-ws' context with our Keystone context
-      context: (ctx: any) => {
+      // run these onSubscribe functions as needed or remove them if you don't need them
+      onSubscribe: async (ctx: any, msg) => {
         // @ts-expect-error CreateRequestContext requires `req` and `res` but only `req` is available here
-        return createRequestContext(ctx.extra.request);
+        const context = await createRequestContext(ctx.extra.request);
+        // Check the user is authenticated (ie. they have a session)
+        // Run any Checks on the session here, or remove this check if you don't need it
+        if (!context.session) {
+          // Return a GraphQL error which disconnects the client.
+          return [new GraphQLError('Not Authorised')];
+        }
+        // Return the execution args for this subscription passing through the Keystone Context
+        return {
+          schema: graphqlSchema,
+          operationName: msg.payload.operationName,
+          document: parse(msg.payload.query),
+          variableValues: msg.payload.variables,
+          contextValue: context,
+        };
       },
-
-      // run these onConnect/onSubscribe functions as needed or remove them if you don't need them
-      onConnect: async (ctx: any) => await onConnect(ctx.extra.request, createRequestContext),
-      onSubscribe: async (ctx: any) => await onConnect(ctx.extra.request, createRequestContext),
     },
     wss
   );
