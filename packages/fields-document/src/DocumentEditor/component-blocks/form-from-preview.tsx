@@ -159,7 +159,7 @@ export type NonChildFieldComponentSchema =
   | RelationshipField<boolean>
   | ArrayField<ComponentSchema>;
 
-function isNonChildFieldPreviewProps(
+export function isNonChildFieldPreviewProps(
   props: GenericPreviewProps<ComponentSchema, unknown>
 ): props is GenericPreviewProps<NonChildFieldComponentSchema, unknown> {
   return props.schema.kind !== 'child';
@@ -180,7 +180,7 @@ export const FormValueContentFromPreviewProps = memo(function FormValueContentFr
     forceValidation?: boolean;
   }
 ) {
-  const Comp = fieldRenderers[props.schema.kind];
+  const Comp = props.schema.preview || fieldRenderers[props.schema.kind];
   return <Comp {...(props as any)} />;
 });
 
