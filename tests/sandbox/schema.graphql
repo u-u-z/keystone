@@ -80,7 +80,7 @@ type ThingStructureLeaf implements ThingStructure {
 
 type ThingStructureLeafValue {
   label: String
-  href: String
+  url: String
 }
 
 type ThingStructureGroup implements ThingStructure {
@@ -299,7 +299,7 @@ input ThingStructureUpdateInput {
 
 input ThingStructureLeafUpdateInput {
   label: String
-  href: String
+  url: String
 }
 
 input ThingStructureGroupUpdateInput {
@@ -366,7 +366,7 @@ input ThingStructureCreateInput {
 
 input ThingStructureLeafCreateInput {
   label: String
-  href: String
+  url: String
 }
 
 input ThingStructureGroupCreateInput {

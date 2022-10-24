@@ -1,66 +1,60 @@
 /** @jsxRuntime classic */
 /** @jsx jsx */
-
+import { jsx, Stack } from '@keystone-ui/core';
 import {
-  fields,
   ArrayField,
   ConditionalField,
   FormField,
-  ComponentSchema,
-  ChildField,
+  fields,
 } from '@keystone-6/fields-document/component-blocks';
 import { PreviewProps } from '@keystone-6/fields-document/src/DocumentEditor/component-blocks/api';
 import {
   FormValueContentFromPreviewProps,
   NonChildFieldComponentSchema,
 } from '@keystone-6/fields-document/form';
-import { jsx, Stack } from '@keystone-ui/core';
 import { AlertDialog } from '@keystone-ui/modals';
 import { ButtonHTMLAttributes, useCallback, useEffect, useState, useRef } from 'react';
-import {
-  OrderableItem,
-  OrderableList,
-  DragHandle,
-} from '@keystone-6/fields-document/src/DocumentEditor/primitives/orderable';
-import { AddButton } from './add-button';
+import { OrderableList, OrderableItem, DragHandle } from '@keystone-6/fields-document/primitives';
+import { Button } from '@keystone-ui/button';
+import { Box } from '@keystone-ui/core';
+import { PlusCircleIcon } from '@keystone-ui/icons/icons/PlusCircleIcon';
+import { PopoverDialog, usePopover } from '@keystone-ui/popover';
+import { useSelect } from 'downshift';
 
-type ComponentSchemaWithoutChildField = Exclude<ComponentSchema, ChildField>;
-
-type ComponentsFields<Components extends Record<string, ComponentSchemaWithoutChildField>> =
-  ArrayField<
-    ConditionalField<
-      FormField<keyof Components & string, readonly { value: keyof Components; label: string }[]>,
-      Components
-    >
-  >;
+type ComponentsFields<Components extends Record<string, NonChildFieldComponentSchema>> = ArrayField<
+  ConditionalField<
+    FormField<keyof Components & string, readonly { value: keyof Components; label: string }[]>,
+    Components
+  >
+>;
 
 const returnUndefined = () => undefined;
 
-function components<
+export function components<
   Components extends {
     [Key in keyof Components]: {
       label: string;
-      schema: ComponentSchemaWithoutChildField;
-      subtitle?: (props: PreviewProps<Components[Key]['schema']>) => string | undefined;
+      field: NonChildFieldComponentSchema;
+      subtitle?: (props: PreviewProps<Components[Key]['field']>) => string | undefined;
       children?: (
-        props: PreviewProps<Components[Key]['schema']>
-      ) => PreviewProps<ComponentSchemaWithoutChildField> | undefined;
+        props: PreviewProps<Components[Key]['field']>
+      ) => PreviewProps<NonChildFieldComponentSchema> | undefined;
     };
   }
 >(
   components: Components
 ): ComponentsFields<{
-  [Key in keyof Components]: Components[Key]['schema'];
+  [Key in keyof Components]: Components[Key]['field'];
 }> {
   const comps = components as unknown as Record<
     string,
     {
       label: string;
-      schema: ComponentSchemaWithoutChildField;
-      subtitle?: (props: PreviewProps<ComponentSchemaWithoutChildField>) => string | undefined;
+      field: NonChildFieldComponentSchema;
+      subtitle?: (props: PreviewProps<NonChildFieldComponentSchema>) => string | undefined;
       children?: (
-        props: PreviewProps<ComponentSchemaWithoutChildField>
-      ) => PreviewProps<ComponentSchemaWithoutChildField> | undefined;
+        props: PreviewProps<NonChildFieldComponentSchema>
+      ) => PreviewProps<NonChildFieldComponentSchema> | undefined;
     }
   >;
   const labels = new Map(Object.entries(comps).map(([key, { label }]) => [key, label]));
@@ -74,7 +68,7 @@ function components<
         })),
         defaultValue: Object.keys(comps)[0],
       }),
-      Object.fromEntries(Object.entries(comps).map(([value, { schema: field }]) => [value, field]))
+      Object.fromEntries(Object.entries(comps).map(([value, { field }]) => [value, field]))
     ),
     {
       preview: function Preview(props) {
@@ -82,24 +76,12 @@ function components<
         useEffect(() => {
           elementsRef.current = props.elements;
         });
-        const { onChange } = props;
+        const propsOnRemove = props.onChange;
         const onRemove = useCallback(
           (id: string) => {
-            onChange(elementsRef.current.filter(x => x.key !== id).map(x => ({ key: x.key })));
+            propsOnRemove(elementsRef.current.filter(x => x.key !== id).map(x => ({ key: x.key })));
           },
-          [onChange]
-        );
-        const onInsert = useCallback(
-          (initialValue: { discriminant: string }) => {
-            onChange([
-              ...elementsRef.current.map(x => ({ key: x.key })),
-              {
-                key: undefined,
-                value: { discriminant: initialValue.discriminant },
-              },
-            ]);
-          },
-          [onChange]
+          [propsOnRemove]
         );
         return (
           <Stack gap="medium">
@@ -107,9 +89,10 @@ function components<
               <OrderableList {...props}>
                 {props.elements.map(x => {
                   return (
+                    // ts infers the type param as FormField without an explicit type parameter for some reason
                     <DraggableElement<typeof x['value']['schema']>
                       key={x.key}
-                      elementKey={x.key}
+                      id={x.key}
                       props={x.value}
                       label={labels.get(x.discriminant)!}
                       children={comps[x.discriminant].children ?? returnUndefined}
@@ -120,7 +103,15 @@ function components<
                 })}
               </OrderableList>
             )}
-            <AddButton options={props.schema.element.discriminant.options} onInsert={onInsert} />
+            <AddButton
+              options={props.schema.element.discriminant.options}
+              onInsert={value => {
+                props.onChange([
+                  ...props.elements.map(x => ({ key: x.key })),
+                  { key: Math.random().toString(36), value },
+                ]);
+              }}
+            />
           </Stack>
         );
       },
@@ -129,59 +120,30 @@ function components<
   return field as any;
 }
 
-function componentThing<Schema extends ComponentSchemaWithoutChildField>(component: {
+export function componentThing<Field extends NonChildFieldComponentSchema>(component: {
   label: string;
-  schema: Schema;
-  subtitle?: (props: PreviewProps<Schema>) => string | undefined;
-  children?: (
-    props: PreviewProps<Schema>
-  ) => PreviewProps<ComponentSchemaWithoutChildField> | undefined;
+  field: Field;
+  subtitle?: (props: PreviewProps<Field>) => string | undefined;
+  children?: (props: PreviewProps<Field>) => PreviewProps<NonChildFieldComponentSchema> | undefined;
 }) {
   return component;
 }
 
-export const prop: ArrayField<ComponentSchemaWithoutChildField> = components({
-  leaf: componentThing({
-    label: 'Leaf',
-    schema: fields.object({
-      label: fields.text({ label: 'Label' }),
-      url: fields.url({ label: 'URL' }),
-    }),
-    subtitle: props => props.fields.label.value,
-  }),
-  group: componentThing({
-    label: 'Group',
-    schema: fields.object({
-      label: fields.text({ label: 'Label' }),
-      get children() {
-        return prop;
-      },
-    }),
-    subtitle: props =>
-      `${props.fields.label.value ? props.fields.label.value + ' — ' : ''}${
-        props.fields.children.elements.length
-      } Items`,
-    children: props => props.fields.children,
-  }),
-});
-
 const DraggableElement = function DraggableElement<
-  Schema extends NonChildFieldComponentSchema
+  Field extends NonChildFieldComponentSchema
 >(props: {
-  props: PreviewProps<Schema>;
-  elementKey: string;
+  props: PreviewProps<Field>;
+  id: string;
   label: string;
-  subtitle: (props: PreviewProps<Schema>) => string | undefined;
-  children: (
-    props: PreviewProps<Schema>
-  ) => PreviewProps<ComponentSchemaWithoutChildField> | undefined;
+  subtitle: (props: PreviewProps<Field>) => string | undefined;
+  children: (props: PreviewProps<Field>) => PreviewProps<NonChildFieldComponentSchema> | undefined;
   onRemove: (id: string) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isChildrenOpen, setIsChildrenOpen] = useState(true);
   const childrenProps = props.children(props.props);
   return (
-    <OrderableItem elementKey={props.elementKey}>
+    <OrderableItem elementKey={props.id}>
       <Stack gap="medium">
         <div css={{ display: 'flex', gap: 4 }}>
           <Stack across gap="xsmall" align="center" css={{ cursor: 'pointer' }}>
@@ -212,6 +174,7 @@ const DraggableElement = function DraggableElement<
                 backgroundColor: '#F6F8FC',
               },
               borderRadius: 8,
+              textAlign: 'start',
             }}
             onClick={() => {
               setIsEditing(true);
@@ -228,13 +191,6 @@ const DraggableElement = function DraggableElement<
             >
               {editIcon}
             </IconButton> */}
-            <IconButton
-              onClick={() => {
-                props.onRemove(props.elementKey);
-              }}
-            >
-              {removeIcon}
-            </IconButton>
             {childrenProps && (
               <Stack across gap="xsmall" align="center">
                 <div css={{ width: 1, height: 28, backgroundColor: '#E9EBF3' }} />
@@ -249,6 +205,13 @@ const DraggableElement = function DraggableElement<
                 </IconButton>
               </Stack>
             )}
+            <IconButton
+              onClick={() => {
+                props.onRemove(props.id);
+              }}
+            >
+              {removeIcon}
+            </IconButton>
           </Stack>
         </div>
         {isChildrenOpen && childrenProps !== undefined && (
@@ -314,3 +277,80 @@ const downChevron = (
     />
   </svg>
 );
+
+function AddButton<Value extends string>(props: {
+  options: readonly { label: string; value: Value }[];
+  onInsert: (initialValue: Value extends any ? { discriminant: Value } : never) => void;
+}) {
+  const { dialog, trigger, isOpen, setOpen, arrow } = usePopover({
+    modifiers: [{ name: 'offset', options: { offset: [0, 4] } }],
+  });
+
+  const { getToggleButtonProps, getMenuProps, getItemProps, highlightedIndex } = useSelect<{
+    label: string;
+    value: Value;
+  }>({
+    items: props.options as typeof props.options[number][],
+    itemToString: x => x?.label ?? '',
+    selectedItem: null,
+    onSelectedItemChange: ({ selectedItem }) => {
+      if (selectedItem) {
+        props.onInsert({ discriminant: selectedItem.value } as any);
+      }
+    },
+    onIsOpenChange: ({ isOpen }) => {
+      setOpen(!!isOpen);
+    },
+    isOpen,
+  });
+  return (
+    <div>
+      <Button
+        {...getToggleButtonProps({
+          ref: trigger.ref,
+          ...trigger.props,
+        })}
+        tone="active"
+        weight="bold"
+      >
+        <span css={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+          <PlusCircleIcon size="smallish" /> <span>Add</span>
+        </span>
+      </Button>
+      <PopoverDialog arrow={arrow} isVisible={isOpen}>
+        <button />
+        <Stack
+          {...getMenuProps({ ref: dialog.ref, ...dialog.props })}
+          gap="xsmall"
+          paddingY="small"
+          paddingX="small"
+          background="white"
+          css={{
+            minWidth: 120,
+            boxShadow: '0px 8px 11px -2px rgba(9, 30, 66, 0.12), 0px 0px 1px rgba(9, 30, 66, 0.31)',
+            borderRadius: 8,
+            listStyle: 'none',
+          }}
+        >
+          {props.options.map((option, i) => {
+            return (
+              <Box
+                key={option.value}
+                {...getItemProps({ item: option, index: i, role: 'menuitem' })}
+                css={{
+                  cursor: 'pointer',
+                  backgroundColor: highlightedIndex === i ? '#F6F8FC' : '',
+                  borderRadius: 4,
+                }}
+                paddingX="medium"
+                paddingY="small"
+              >
+                {option.label}
+              </Box>
+            );
+          })}
+        </Stack>
+      </PopoverDialog>
+    </div>
+  );
+}
