@@ -72,50 +72,50 @@ export function components<
       Object.fromEntries(Object.entries(comps).map(([value, { field }]) => [value, field]))
     ),
     {
-      preview: function Preview(props) {
-        const elementsRef = useRef(props.elements);
-        useEffect(() => {
-          elementsRef.current = props.elements;
-        });
-        const propsOnRemove = props.onChange;
-        const onRemove = useCallback(
-          (id: string) => {
-            propsOnRemove(elementsRef.current.filter(x => x.key !== id).map(x => ({ key: x.key })));
-          },
-          [propsOnRemove]
-        );
-        return (
-          <Stack gap="medium">
-            {!!props.elements.length && (
-              <OrderableList {...props}>
-                {props.elements.map(x => {
-                  return (
-                    // ts infers the type param as FormField without an explicit type parameter for some reason
-                    <DraggableElement<typeof x['value']['schema']>
-                      key={x.key}
-                      id={x.key}
-                      props={x.value}
-                      label={labels.get(x.discriminant)!}
-                      children={comps[x.discriminant].children ?? returnUndefined}
-                      subtitle={comps[x.discriminant].subtitle ?? returnUndefined}
-                      onRemove={onRemove}
-                    />
-                  );
-                })}
-              </OrderableList>
-            )}
-            <AddButton
-              options={props.schema.element.discriminant.options}
-              onInsert={value => {
-                props.onChange([
-                  ...props.elements.map(x => ({ key: x.key })),
-                  { key: Math.random().toString(36), value },
-                ]);
-              }}
-            />
-          </Stack>
-        );
-      },
+      // preview: function Preview(props) {
+      //   const elementsRef = useRef(props.elements);
+      //   useEffect(() => {
+      //     elementsRef.current = props.elements;
+      //   });
+      //   const propsOnRemove = props.onChange;
+      //   const onRemove = useCallback(
+      //     (id: string) => {
+      //       propsOnRemove(elementsRef.current.filter(x => x.key !== id).map(x => ({ key: x.key })));
+      //     },
+      //     [propsOnRemove]
+      //   );
+      //   return (
+      //     <Stack gap="medium">
+      //       {!!props.elements.length && (
+      //         <OrderableList {...props}>
+      //           {props.elements.map(x => {
+      //             return (
+      //               // ts infers the type param as FormField without an explicit type parameter for some reason
+      //               <DraggableElement<typeof x['value']['schema']>
+      //                 key={x.key}
+      //                 id={x.key}
+      //                 props={x.value}
+      //                 label={labels.get(x.discriminant)!}
+      //                 children={comps[x.discriminant].children ?? returnUndefined}
+      //                 subtitle={comps[x.discriminant].subtitle ?? returnUndefined}
+      //                 onRemove={onRemove}
+      //               />
+      //             );
+      //           })}
+      //         </OrderableList>
+      //       )}
+      //       <AddButton
+      //         options={props.schema.element.discriminant.options}
+      //         onInsert={value => {
+      //           props.onChange([
+      //             ...props.elements.map(x => ({ key: x.key })),
+      //             { key: Math.random().toString(36), value },
+      //           ]);
+      //         }}
+      //       />
+      //     </Stack>
+      //   );
+      // },
     }
   );
   return field as any;
