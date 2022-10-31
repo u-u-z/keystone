@@ -1,8 +1,11 @@
-import { ArrayField, fields } from '@keystone-6/fields-document/component-blocks';
-import { NonChildFieldComponentSchema } from '@keystone-6/fields-document/form';
+import {
+  ArrayField,
+  ComponentSchemaForGraphQL,
+  fields,
+} from '@keystone-6/fields-document/component-blocks';
 import { componentThing, components } from './components-field';
 
-export const schema: ArrayField<NonChildFieldComponentSchema> = components({
+export const schema: ArrayField<ComponentSchemaForGraphQL> = components({
   leaf: componentThing({
     label: 'Leaf',
     field: fields.object({

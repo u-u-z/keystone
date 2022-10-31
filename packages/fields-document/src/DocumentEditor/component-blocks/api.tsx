@@ -564,7 +564,7 @@ type ChildFieldPreviewProps<Schema extends ChildField, ChildFieldElement> = {
 };
 
 type FormFieldPreviewProps<Schema extends FormField<any, any>> = {
-  readonly value: Schema['options'];
+  readonly value: Schema['defaultValue'];
   onChange(value: Schema['defaultValue']): void;
   readonly options: Schema['options'];
   readonly schema: Schema;
@@ -601,15 +601,14 @@ type ConditionalFieldPreviewProps<
   };
 }[keyof Schema['values']];
 
+// this is a separate type so that this is distributive
+type RelationshipDataType<Many extends boolean> = Many extends true
+  ? readonly HydratedRelationshipData[]
+  : HydratedRelationshipData | null;
+
 type RelationshipFieldPreviewProps<Schema extends RelationshipField<boolean>> = {
-  readonly value: Schema['many'] extends true
-    ? readonly HydratedRelationshipData[]
-    : HydratedRelationshipData | null;
-  onChange(
-    relationshipData: Schema['many'] extends true
-      ? readonly HydratedRelationshipData[]
-      : HydratedRelationshipData | null
-  ): void;
+  readonly value: RelationshipDataType<Schema['many']>;
+  onChange(relationshipData: RelationshipDataType<Schema['many']>): void;
   readonly schema: Schema;
 };
 

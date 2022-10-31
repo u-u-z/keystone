@@ -1,13 +1,11 @@
 /** @jsxRuntime classic */
 /** @jsx jsx */
 import { jsx, Stack } from '@keystone-ui/core';
+import { ArrayField, ConditionalField, fields } from '@keystone-6/fields-document/component-blocks';
 import {
-  ArrayField,
-  ConditionalField,
-  FormField,
-  fields,
-} from '@keystone-6/fields-document/component-blocks';
-import { PreviewProps } from '@keystone-6/fields-document/src/DocumentEditor/component-blocks/api';
+  FormFieldWithGraphQLField,
+  PreviewProps,
+} from '@keystone-6/fields-document/src/DocumentEditor/component-blocks/api';
 import {
   FormValueContentFromPreviewProps,
   NonChildFieldComponentSchema,
@@ -23,7 +21,10 @@ import { useSelect } from 'downshift';
 
 type ComponentsFields<Components extends Record<string, NonChildFieldComponentSchema>> = ArrayField<
   ConditionalField<
-    FormField<keyof Components & string, readonly { value: keyof Components; label: string }[]>,
+    FormFieldWithGraphQLField<
+      keyof Components & string,
+      readonly { value: keyof Components; label: string }[]
+    >,
     Components
   >
 >;

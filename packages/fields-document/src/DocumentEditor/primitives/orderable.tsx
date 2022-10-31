@@ -156,7 +156,6 @@ export function RemoveButton() {
 
   return (
     <Button
-      size="small"
       weight="none"
       css={{ padding: 7 }}
       onClick={() => onRemove(sortable.index)}

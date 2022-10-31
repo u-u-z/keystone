@@ -3,9 +3,11 @@
 import { useKeystone } from '@keystone-6/core/admin-ui/context';
 import { RelationshipSelect } from '@keystone-6/core/fields/types/relationship/views/RelationshipSelect';
 import { Button } from '@keystone-ui/button';
-import { Box, jsx, Stack } from '@keystone-ui/core';
+import { jsx, Stack } from '@keystone-ui/core';
 import { FieldContainer, FieldLabel } from '@keystone-ui/fields';
-import { memo, useMemo } from 'react';
+import { PlusCircleIcon } from '@keystone-ui/icons/icons/PlusCircleIcon';
+import { AlertDialog } from '@keystone-ui/modals';
+import { memo, useMemo, useState } from 'react';
 import { DragHandle, OrderableItem, OrderableList, RemoveButton } from '../primitives/orderable';
 import {
   ArrayField,
@@ -36,12 +38,15 @@ function ArrayFieldPreview(props: DefaultFieldProps<'array'>) {
         })}
       </OrderableList>
       <Button
-        autoFocus={props.autoFocus}
         onClick={() => {
           props.onChange([...props.elements.map(x => ({ key: x.key })), { key: undefined }]);
         }}
+        autoFocus={props.autoFocus}
+        tone="active"
       >
-        Add
+        <Stack gap="small" across>
+          <PlusCircleIcon size="smallish" /> <span>Add</span>
+        </Stack>
       </Button>
     </Stack>
   );
@@ -189,15 +194,42 @@ const OrderableItemInForm = memo(function OrderableItemInForm(
     elementKey: string;
   }
 ) {
+  const [isEditing, setIsEditing] = useState(false);
   return (
     <OrderableItem elementKey={props.elementKey}>
-      <div css={{ display: 'flex', justifyContent: 'space-between' }}>
-        <DragHandle />
-        <RemoveButton />
-      </div>
-      <Box paddingX="medium" paddingBottom="medium">
-        {isNonChildFieldPreviewProps(props) && <FormValueContentFromPreviewProps {...props} />}
-      </Box>
+      <Stack gap="medium">
+        <div css={{ display: 'flex', gap: 4 }}>
+          <Stack across gap="xsmall" align="center" css={{ cursor: 'pointer' }}>
+            <DragHandle />
+          </Stack>
+          <Button
+            weight="none"
+            onClick={() => {
+              setIsEditing(true);
+            }}
+            css={{ flexGrow: 1, justifyContent: 'start' }}
+          >
+            <span css={{ fontSize: 16, fontWeight: 'bold', textAlign: 'start' }}>Item</span>
+          </Button>
+          <RemoveButton />
+        </div>
+        {isNonChildFieldPreviewProps(props) && (
+          <AlertDialog
+            title={`Edit Item`}
+            actions={{
+              confirm: {
+                action: () => {
+                  setIsEditing(false);
+                },
+                label: 'Done',
+              },
+            }}
+            isOpen={isEditing}
+          >
+            <FormValueContentFromPreviewProps {...props} />
+          </AlertDialog>
+        )}
+      </Stack>
     </OrderableItem>
   );
 });
