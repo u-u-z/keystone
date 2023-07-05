@@ -155,15 +155,13 @@ export function uniqueEqualityFilterTest(
     })
   );
   test(
-    'unique filter with null returns an error',
+    'unique filter with null returns null',
     filterTestRunner(field)(async ({ context }) => {
-      const promise = context.query[listKey].findOne({
+      const { index } = await context.query[listKey].findOne({
         where: { testField: null },
         query: 'index',
       });
-      expect(await promise.catch(x => x.toString())).toMatch(
-        'The unique value provided in a unique where input must not be null'
-      );
+      expect(index).toEqual(null);
     })
   );
 }
